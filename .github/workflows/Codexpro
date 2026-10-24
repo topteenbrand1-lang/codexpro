@@ -1,0 +1,56 @@
+
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - windows-latest
+        node:
+          - 20
+          - 24
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7.0.0
+
+      - name: Setup Node
+        uses: actions/setup-node@v6.4.0
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Smoke Test
+        run: npm run smoke
+
+      - name: Stress Test
+        run: npm run stress
+
+      - name: Check Package Contents
+        run: npm pack --dry-run
+
+      - name: Install Packed Package
+        run: npm run package:smoke
+
+      - name: Audit Dependencies
+        run: npm audit --audit-level=high
